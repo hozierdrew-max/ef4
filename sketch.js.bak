@@ -1,0 +1,229 @@
+// --- 全局变量 ---
+let sourceImg;          // 存储加载的图像 (p5.Image 对象)
+let sourceSong;         // 存储加载的音乐
+let fft;                // FFT (快速傅里叶变换) 分析器
+let dotSize = 16;        // 像素点阵的大小 (通过滑块控制)
+let bassMultiplier = 1.5; // 低音驱动视觉变化的强度
+
+// 粒子系统
+let particles = []; // { x0,y0,x,y,vx,vy,color,seed }
+// 调整参数（动感但更清晰）
+const CHAOS_STRENGTH = 3.0; // 降低噪声强度以提高图像可识别性
+const MOUSE_RADIUS = 120;
+const MOUSE_FORCE = 3.0;
+// 性能：最大粒子数上限（调小可提高性能）
+const MAX_PARTICLES = 1000; // ← 在这里修改上限（例如 2000、4000、8000）
+
+// --- 预加载函数 (确保在 setup 之前加载资源) ---
+function preload() {
+    console.log("Preloading image and sound...");
+    
+    // 1. 加载图像
+    sourceImg = loadImage(IMAGE_PATH, 
+        () => console.log(`Image '${IMAGE_PATH}' loaded OK.`),
+        (e) => console.error(`[ERROR] Failed to load image '${IMAGE_PATH}'. Check path/name.`, e)
+    );
+    
+    // 2. 加载音乐
+    sourceSong = loadSound(MUSIC_PATH, 
+        () => console.log(`Sound '${MUSIC_PATH}' loaded OK.`),
+        (e) => console.error(`[ERROR] Failed to load sound '${MUSIC_PATH}'. Check path/name.`, e)
+    );
+}
+
+// --- 设置函数 ---
+function setup() {
+    createCanvas(windowWidth * 0.75, windowHeight * 0.85);
+    fft = new p5.FFT();
+    colorMode(RGB, 255);
+    rectMode(CENTER);
+
+    // 绑定 UI 滑块事件（如果存在）
+    const dotSlider = document.getElementById('dot-size-slider');
+    if (dotSlider) {
+        dotSlider.oninput = function() {
+            dotSize = parseInt(this.value);
+            buildParticles();
+        };
+    }
+    const bassSlider = document.getElementById('bass-mult-slider');
+    if (bassSlider) {
+        bassSlider.oninput = function() {
+            bassMultiplier = parseFloat(this.value);
+        };
+    }
+
+    // 鼠标交互（p5 提供全局 mouseX / mouseY，若需要也可以绑定原生事件）
+    if (typeof canvas !== 'undefined' && canvas) {
+        canvas.addEventListener('mousemove', () => {});
+    }
+
+    // 构建粒子（必须在 image 已加载后调用）
+    if (sourceImg && sourceImg.width > 0) {
+        buildParticles();
+    }
+
+    // 默认开始播放音乐
+    if (sourceSong && sourceSong.isLoaded()) {
+        sourceSong.loop();
+    }
+}
+
+// --- 主绘图循环 ---
+function draw() {
+    background(0);
+
+    if (!sourceImg || sourceImg.width === 0) {
+        fill(255, 0, 0);
+        textAlign(CENTER, CENTER);
+        textSize(16);
+        text("图像加载失败！请检查文件名和路径。", width / 2, height / 2);
+        return;
+    }
+
+    // 音频分析
+    let bass = 0;
+    if (sourceSong && sourceSong.isLoaded() && sourceSong.isPlaying()) {
+        fft.analyze();
+        bass = fft.getEnergy('bass');
+    }
+
+    // 不要扰动整个画面：移除抖动以保证图像稳定
+
+    // 更新并绘制粒子
+    noStroke();
+    for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
+        // 基于低频的推动力
+        const audioForce = map(bass * bassMultiplier, 0, 255 * bassMultiplier, 0, 1.8);
+
+        // 混沌噪声（平滑） — 减弱幅度
+        const t = frameCount * 0.01;
+        const nx = (noise(p.seed + t) - 0.5) * CHAOS_STRENGTH * 0.45;
+        const ny = (noise(p.seed + 100 + t) - 0.5) * CHAOS_STRENGTH * 0.45;
+
+        // 弹簧力拉回原位（增强基础回弹以贴合图像）
+        const k = 0.06 * (1 + audioForce * 0.8);
+        let fx = (p.x0 - p.x) * k + nx;
+        let fy = (p.y0 - p.y) * k + ny;
+
+        // 鼠标悬停交互（斥力）
+        const dx = p.x - mouseX;
+        const dy = p.y - mouseY;
+        const d = sqrt(dx * dx + dy * dy) + 0.0001;
+        if (d < MOUSE_RADIUS) {
+            const push = (1 - d / MOUSE_RADIUS) * MOUSE_FORCE * (1 + audioForce);
+            fx += (dx / d) * push;
+            fy += (dy / d) * push;
+        }
+
+        // 更新速度与位置（阻尼）
+        p.vx = (p.vx + fx) * 0.88;
+        p.vy = (p.vy + fy) * 0.88;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // 大小随音量变化（适度）
+        const sz = p.baseSize * (0.4 + 3.0 * audioForce);
+
+        // 圆形粒子绘制（恢复）
+        const col = color(p.r, p.g, p.b, p.alpha * 255);
+        fill(col);
+        drawingContext.shadowBlur = max(0.5, sz * 0.9);
+        drawingContext.shadowColor = `rgba(${p.r}, ${p.g}, ${p.b}, ${p.alpha})`;
+        // 使用矩形粒子（中心对齐）
+        rect(p.x, p.y, sz, sz);
+        drawingContext.shadowBlur = 0;
+    }
+}
+
+// --- 音乐控制函数 ---
+function togglePlayback() {
+    if (sourceSong && sourceSong.isLoaded()) {
+        if (sourceSong.isPlaying()) {
+            sourceSong.pause();
+        } else {
+            sourceSong.loop(); 
+        }
+    }
+}
+
+// --- 窗口大小改变时重设 Canvas ---
+function windowResized() {
+    resizeCanvas(windowWidth * 0.75, windowHeight * 0.85);
+    // 重新计算粒子布局
+    buildParticles();
+}
+
+
+/**
+ * 构建粒子数组：每个采样点成为一个可移动粒子
+ */
+function buildParticles() {
+    particles = [];
+    if (!sourceImg || sourceImg.width === 0) return;
+
+    sourceImg.loadPixels();
+
+    // 计算缩放比例，使图像居中填充 Canvas
+    let imgRatio = sourceImg.width / sourceImg.height;
+    let canvasRatio = width / height;
+    let w, h;
+
+    if (imgRatio > canvasRatio) {
+        h = height;
+        w = h * imgRatio;
+    } else {
+        w = width;
+        h = w / imgRatio;
+    }
+    let startX = (width - w) / 2;
+    let startY = (height - h) / 2;
+
+    // 计算自适应采样步长，保证不超过 MAX_PARTICLES
+    const approxCols = Math.max(1, Math.floor(w / dotSize));
+    const approxRows = Math.max(1, Math.floor(h / dotSize));
+    const approxTotal = approxCols * approxRows;
+    let step = dotSize;
+    if (approxTotal > MAX_PARTICLES) {
+        // 需要增大采样步长：按 sqrt 比例增加步长
+        const scale = Math.sqrt(approxTotal / MAX_PARTICLES);
+        step = Math.ceil(dotSize * scale);
+    }
+
+    for (let y = 0; y < h; y += step) {
+        for (let x = 0; x < w; x += step) {
+            let originalX = floor(x * sourceImg.width / w);
+            let originalY = floor(y * sourceImg.height / h);
+            const index = (originalX + originalY * sourceImg.width) * 4;
+            const r = sourceImg.pixels[index];
+            const g = sourceImg.pixels[index + 1];
+            const b = sourceImg.pixels[index + 2];
+
+            // 色彩映射（保留之前的 Y2K 风格）
+            let colorR = constrain(r, 0, 255);
+            let colorG = constrain(g * 0.6, 0, 180);
+            let colorB = constrain(b, 0, 255);
+            const col = color(colorR, colorG, colorB);
+
+            const px = startX + x;
+            const py = startY + y;
+
+            particles.push({
+                x0: px,
+                y0: py,
+                x: px + random(-6, 6), // 初始扰动减小，粒子更贴近原图
+                y: py + random(-6, 6),
+                vx: random(-0.6, 0.6),
+                vy: random(-0.6, 0.6),
+                r: colorR,
+                g: colorG,
+                b: colorB,
+                alpha: constrain((r + g + b) / (3 * 255), 0.25, 1.0), // 根据亮度设置透明度
+                baseSize: dotSize * 0.7,
+                seed: random(1000)
+            });
+        }
+    }
+}

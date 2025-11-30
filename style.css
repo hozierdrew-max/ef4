@@ -1,0 +1,221 @@
+:root {
+    --neon-pink: #FF00AA;
+    --neon-cyan: #00FFFF;
+    --neon-red: #FF3030; /* new red theme for sliders */
+    --dark-bg: #0A0A0A;
+}
+
+body {
+    background-color: #000;
+    margin: 0;
+    overflow: hidden; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+canvas {
+    display: block; 
+    position: relative; /* Changed to relative */
+    top: 0; 
+    left: 0; 
+    transform: none; 
+}
+
+/* --- UI 容器样式 --- */
+
+#cyberpunk-ui {
+    font-family: 'Press Start 2P', cursive;
+    position: fixed; /* position relative to viewport */
+    right: 12px; /* anchor to right bottom */
+    left: auto;
+    transform: none;
+    bottom: 12px; /* distance from bottom edge */
+    background: rgba(10,10,10,0.65); /* semi-transparent to avoid heavy frame look */
+    padding: 4px 6px; /* smaller padding */
+    border: none; /* remove visible frame */
+    color: var(--neon-pink);
+    box-shadow: none; /* remove highlight frame */
+    z-index: 1000; /* put on top */
+    font-size: 7px; /* even smaller */
+    border-radius: 4px;
+    display: inline-block;
+    max-width: calc(100vw - 24px);
+}
+
+/* Visibility states for the UI: hidden vs visible */
+.ui-hidden {
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+    visibility: hidden;
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+.ui-visible {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    visibility: visible;
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+/* hide any heading for compact UI — no headings used */
+#cyberpunk-ui h2 { display: none; }
+
+.module {
+    margin-bottom: 10px;
+}
+
+.module h3 {
+    font-size: 10px;
+    color: var(--neon-cyan);
+    border-bottom: 1px solid var(--neon-cyan);
+    padding-bottom: 3px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.neon-button {
+    background: transparent;
+    color: var(--neon-pink);
+    border: none;
+    padding: 5px 10px;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    margin-right: 5px;
+    transition: all 0.1s;
+    box-shadow: none; /* keep it flat */
+}
+
+.neon-button:hover {
+    background: var(--neon-cyan);
+    color: #000;
+    box-shadow: 0 0 10px var(--neon-cyan);
+}
+
+/* Red themed button variant (used for play/pause) */
+.neon-button.red {
+    color: var(--neon-red);
+    border: none;
+}
+.neon-button.red:hover {
+    background: var(--neon-red);
+    color: #000;
+    box-shadow: 0 0 10px rgba(255, 48, 48, 0.5);
+}
+/* Small circular play button */
+.neon-button.red {
+    padding: 3px 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+}
+
+label {
+    display: block;
+    font-size: 8px;
+    margin-top: 8px;
+    margin-bottom: 3px;
+    color: var(--neon-cyan);
+}
+
+/* Compact horizontal slider row */
+.slider-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+/* Remove visible labels (we use aria-label) */
+#cyberpunk-ui label { display: none; }
+
+/* style for range inputs (smaller) */
+#cyberpunk-ui input[type="range"] {
+    width: clamp(60px, 12vw, 110px);
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(90deg, var(--neon-red), #FF6B6B);
+    border-radius: 2px;
+    border: none; /* remove border */
+    box-shadow: none; /* remove outer glow */
+}
+
+/* Webkit track & thumb */
+#cyberpunk-ui input[type="range"]::-webkit-slider-runnable-track {
+    background: linear-gradient(90deg, var(--neon-red), #FF6B6B);
+    height: 6px;
+    border-radius: 2px;
+    border: none;
+}
+#cyberpunk-ui input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--neon-red);
+    border: none;
+    box-shadow: none; /* remove glow for a flat red look */
+    margin-top: -3px; /* align with track */
+}
+
+/* Mozilla track & thumb */
+#cyberpunk-ui input[type="range"]::-moz-range-track {
+    background: linear-gradient(90deg, var(--neon-red), #FF6B6B);
+    height: 6px;
+    border-radius: 2px;
+    border: none;
+}
+#cyberpunk-ui input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--neon-red);
+    border: none;
+    box-shadow: none; /* remove glow for a flat red look */
+}
+
+#cyberpunk-ui input[type="range"]:focus {
+    outline: none;
+}
+#cyberpunk-ui input[type="range"]::-moz-focus-outer {
+    border: 0;
+}
+
+/* 滑块的赛博朋克主题 */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 5px;
+    background: var(--neon-pink);
+    outline: none;
+    opacity: 0.7;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    background: var(--neon-cyan);
+    cursor: pointer;
+    box-shadow: 0 0 5px var(--neon-cyan);
+}
+
+/* Wrapper that contains the canvas and UI so UI can be positioned relative to the canvas */
+#canvas-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.neon-button.red.playing {
+    background: var(--neon-red);
+    color: #000;
+}

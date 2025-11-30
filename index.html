@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2K Cyberpunk Visualizer [EXT 3]</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="libraries/p5.js"></script>
+    <script src="libraries/p5.sound.js"></script>
+</head>
+<body>
+    
+    <div id="canvas-wrapper">
+        <div id="cyberpunk-ui">
+        <h2>[EXT 3] // VISUAL CONTROL //</h2>
+        
+        <div class="control-panel">
+            
+            <div class="module">
+                <h3>:: CURRENT SOURCE ::</h3>
+                <p>Image: cyberpunk_image.jpg</p>
+                <p>Audio: y2k_track.mp3</p>
+            </div>
+            
+            <div class="module">
+                <h3>:: AUDIO TRACK ::</h3>
+                <button class="neon-button" onclick="togglePlayback()">PLAY/PAUSE</button>
+            </div>
+            
+            <div class="module">
+                <h3>:: VISUAL PARAMETERS ::</h3>
+                <label>PIXEL_DENSITY:</label>
+                <input type="range" id="dot-size-slider" min="3" max="15" value="6"> <label>BASS_COLOR_REACT:</label>
+                <input type="range" id="bass-color-slider" min="0" max="100" step="5" value="50"> <label>PARTICLE_WAVE_STR:</label>
+                <input type="range" id="wave-strength-slider" min="0" max="10" step="0.5" value="2"> </div>
+        </div>
+        </div>
+    </div>
+
+    <script src="sketch.js"></script>
+</body>
+</html>
